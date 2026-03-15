@@ -15,3 +15,4 @@
 - validated live `show` and `export` flows using the same transport
 - updated README with real workflow examples and current capability status
 - `seek detail` now accepts either a job id or a SEEK NZ job URL
+- added a bundled `seek-cli` AgentSkill under `skills/seek-cli/`

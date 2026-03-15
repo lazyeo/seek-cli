@@ -134,6 +134,12 @@ docs/
 - Roadmap: `docs/roadmap.md`
 - Changelog: `CHANGELOG.md`
 
+## Bundled AgentSkill
+
+This repository also includes an AgentSkill for using the CLI from agent runtimes:
+
+- `skills/seek-cli/SKILL.md`
+
 ## Development principles
 
 1. Docs move with code.
