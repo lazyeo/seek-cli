@@ -1,60 +1,92 @@
 # seek-cli
 
-A documentation-first, read-only CLI for SEEK job discovery.
+Read-only CLI for SEEK New Zealand job discovery and job-description extraction.
 
-## Status
+## What it does
 
-Prototype scaffold. This repo currently provides:
-- command structure
-- HTTP client abstraction
-- local index cache for `seek show`
-- JSON output envelope
-- documentation for implementation and reverse-engineering workflow
+- search SEEK NZ jobs from the terminal
+- fetch a full job description by job ID or SEEK NZ job URL
+- inspect the last cached search result with `seek show`
+- export search results to JSON or CSV
+- page through multiple search result pages to satisfy larger export counts
+- return structured JSON for downstream automation
 
-Live SEEK endpoint integration is intentionally not wired up yet; first we lock the interface and docs.
+## What it does not do
 
-Current discovery status:
-- SEEK pages load successfully in a real browser session
-- page data is hydrated into `window.SEEK_APOLLO_DATA`
-- direct `httpx` requests hit anti-bot / Cloudflare `403` responses
-- **working breakthrough:** `curl_cffi` browser impersonation + browser-cookie reuse can fetch SEEK HTML with status 200 and Apollo data intact
-- this keeps the MVP on the HTTP/session-reuse path instead of requiring full browser extraction
+- apply for jobs
+- message recruiters
+- automate account actions
+- act as a generic web scraper for arbitrary sites
+- guarantee bypass of SEEK anti-bot protection in every environment
 
-## Goals
+## How it works
 
-- Search SEEK jobs from the terminal
-- View job details / JD text
-- Export results as JSON or CSV
-- Keep human-readable Rich output and machine-friendly JSON output
-- Stay read-only
+`seek-cli` uses a read-only HTTP transport built on:
+- `browser-cookie3` for local browser cookie reuse
+- `curl_cffi` for Chrome-like request impersonation
 
-## Non-goals
+The current implementation works by reusing an already-valid local browser session, fetching SEEK pages over HTTP, extracting `window.SEEK_APOLLO_DATA`, and normalizing the page data into CLI-friendly output.
 
-- Applying for jobs
-- Messaging recruiters
-- Account automation
-- Hidden browser automation as a default path
+This is intentionally not a browser automation workflow for normal use.
 
-## Commands
+## Current scope
+
+This repository currently targets **SEEK New Zealand** pages (`seek.co.nz`).
+
+Implemented commands:
+- `search`
+- `detail`
+- `show`
+- `export`
+
+Implemented capabilities:
+- live job search
+- live detail fetch by job ID
+- live detail fetch by SEEK NZ job URL
+- cached follow-up lookup with `show`
+- multi-page export / collection
+- normalized fields including listed time, bullet points, classifications, work arrangement, and company search URL when available
+
+## Install
+
+```bash
+uv sync
+uv run seek --help
+```
+
+## Usage
+
+### Search jobs
 
 ```bash
 seek search "python"
 seek search "data engineer" --location Auckland --page 2
+seek search "python" --json
+```
+
+### Fetch a job description
+
+```bash
 seek detail 90683869
 seek detail 'https://www.seek.co.nz/job/90683869?type=standard&ref=search-standalone'
-seek show 3
-seek export "backend engineer" --location Wellington --count 100 --format json -o jobs.json
+seek detail 90683869 --json
+```
+
+### Use cached search results
+
+```bash
+seek show 1
+seek show 1 --json
+```
+
+### Export results
+
+```bash
+seek export "python" --count 60 --format json -o jobs.json
 seek export "python" --count 60 --format csv -o jobs.csv
 ```
 
-## What works now
-
-- live `search` against SEEK NZ pages
-- live `detail` by job ID or SEEK NZ job URL
-- `show` using the cached last search result
-- `export` to JSON and CSV
-- multi-page export / collection to satisfy larger `--count` values
-- richer normalized fields including listed time, bullet points, classifications, and work arrangement
+`export` will keep paging through search results until the requested count is reached or SEEK runs out of results.
 
 ## Example workflow
 
@@ -71,29 +103,19 @@ seek detail 'https://www.seek.co.nz/job/90683869?type=standard&ref=search-standa
 # inspect the first job from your last search
 seek show 1
 
-# export current search space (will page through results until count is reached or results run out)
+# export more than one page of results
 seek export "python" --count 60 --format json -o jobs.json
-seek export "python" --count 60 --format csv -o jobs.csv
 ```
 
-## Install
+## Session requirement
 
-```bash
-uv sync
-uv run seek --help
-```
-
-## Session reuse requirement
-
-The current transport expects a local browser cookie store that already has a valid SEEK session / challenge-cleared state.
+The transport expects a local browser cookie store that already contains a valid SEEK session / challenge-cleared state.
 
 Current cookie lookup order:
 - OpenClaw browser profile: `~/.openclaw/browser/openclaw/user-data/Default/Cookies`
 - Chrome default profile: `~/Library/Application Support/Google/Chrome/Default/Cookies`
 
-Transport stack:
-- `browser-cookie3` for cookie extraction
-- `curl_cffi` for Chrome-like HTTP fingerprinting
+If SEEK anti-bot challenge is still active for the current session, open SEEK in Chrome or the OpenClaw browser first, then retry the CLI.
 
 ## Output contract
 
@@ -110,6 +132,14 @@ JSON output uses a stable envelope:
 Notable fields:
 - search jobs may include `listed_at`, `bullet_points`, and `classifications`
 - detail/show payloads may include `work_arrangement`, `bullet_points`, `classifications`, and `company_search_url`
+
+## Limitations and boundaries
+
+- optimized for local/private use rather than public high-scale scraping
+- depends on a valid local browser session
+- currently NZ-only; AU support is not claimed
+- subject to SEEK frontend and anti-bot changes
+- read-only by design
 
 ## Project layout
 
@@ -132,6 +162,10 @@ docs/
 ├── architecture.md
 ├── reverse-engineering-notes.md
 └── roadmap.md
+
+skills/
+└── seek-cli/
+    └── SKILL.md
 ```
 
 ## Documentation
@@ -146,10 +180,3 @@ docs/
 This repository also includes an AgentSkill for using the CLI from agent runtimes:
 
 - `skills/seek-cli/SKILL.md`
-
-## Development principles
-
-1. Docs move with code.
-2. Reverse-engineering findings get written down immediately.
-3. Keep transport, parsing, rendering, and command UX separate.
-4. Preserve a read-only scope unless explicitly expanded.
