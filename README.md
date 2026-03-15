@@ -44,14 +44,17 @@ seek detail 90683869
 seek detail 'https://www.seek.co.nz/job/90683869?type=standard&ref=search-standalone'
 seek show 3
 seek export "backend engineer" --location Wellington --count 100 --format json -o jobs.json
+seek export "python" --count 60 --format csv -o jobs.csv
 ```
 
 ## What works now
 
 - live `search` against SEEK NZ pages
-- live `detail` by job ID
+- live `detail` by job ID or SEEK NZ job URL
 - `show` using the cached last search result
 - `export` to JSON and CSV
+- multi-page export / collection to satisfy larger `--count` values
+- richer normalized fields including listed time, bullet points, classifications, and work arrangement
 
 ## Example workflow
 
@@ -68,9 +71,9 @@ seek detail 'https://www.seek.co.nz/job/90683869?type=standard&ref=search-standa
 # inspect the first job from your last search
 seek show 1
 
-# export current search space
-seek export "python" --format json -o jobs.json
-seek export "python" --format csv -o jobs.csv
+# export current search space (will page through results until count is reached or results run out)
+seek export "python" --count 60 --format json -o jobs.json
+seek export "python" --count 60 --format csv -o jobs.csv
 ```
 
 ## Install
@@ -103,6 +106,10 @@ JSON output uses a stable envelope:
   "data": {}
 }
 ```
+
+Notable fields:
+- search jobs may include `listed_at`, `bullet_points`, and `classifications`
+- detail/show payloads may include `work_arrangement`, `bullet_points`, `classifications`, and `company_search_url`
 
 ## Project layout
 

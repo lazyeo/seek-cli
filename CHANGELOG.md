@@ -16,3 +16,6 @@
 - updated README with real workflow examples and current capability status
 - `seek detail` now accepts either a job id or a SEEK NZ job URL
 - added a bundled `seek-cli` AgentSkill under `skills/seek-cli/`
+- added multi-page job collection for export flows
+- normalized richer fields including listed time, bullet points, classifications, work arrangement, and company search URL
+- updated docs and skill guidance to match the new collection/export behavior

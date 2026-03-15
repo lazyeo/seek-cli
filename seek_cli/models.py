@@ -13,7 +13,11 @@ class JobSummary:
     salary: str = ""
     teaser: str = ""
     work_type: str = ""
+    work_arrangement: str = ""
+    listed_at: str = ""
     listing_url: str = ""
+    bullet_points: list[str] = field(default_factory=list)
+    classifications: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -23,6 +27,7 @@ class JobSummary:
 @dataclass
 class JobDetail(JobSummary):
     description: str = ""
+    company_search_url: str = ""
 
 
 @dataclass

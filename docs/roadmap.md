@@ -16,15 +16,17 @@
 
 ## Phase 2.5 - Transport choice
 - [x] prove viable HTTP session reuse path with browser-like fingerprinting
-- [ ] harden cookie-source discovery and error handling
-- [ ] implement one live transport behind `SeekClient`
+- [x] harden cookie-source discovery and error handling
+- [x] implement one live transport behind `SeekClient`
 
 ## Phase 3 - Read-only MVP
-- [ ] implement live `search`
-- [ ] implement live `detail`
-- [ ] support `show` from cached results
-- [ ] support JSON export
-- [ ] support CSV export
+- [x] implement live `search`
+- [x] implement live `detail`
+- [x] support `show` from cached results
+- [x] support JSON export
+- [x] support CSV export
+- [x] support multi-page export / collection
+- [x] normalize richer search/detail fields
 
 ## Phase 4 - Hardening
 - [ ] retry/backoff policy

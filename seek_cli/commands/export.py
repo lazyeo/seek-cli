@@ -21,9 +21,7 @@ def export(keyword: str, location: str, page: int, count: int, fmt: str, output_
     """Export normalized search results."""
     try:
         with SeekClient() as client:
-            result = client.search_jobs(keyword=keyword, location=location, page=page)
-
-        jobs = [job.to_dict() for job in result.jobs[:count]]
+            jobs = [job.to_dict() for job in client.collect_jobs(keyword=keyword, location=location, start_page=page, count=count)]
         path = Path(output_path)
         path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -38,7 +36,7 @@ def export(keyword: str, location: str, page: int, count: int, fmt: str, output_
         click.echo(f"Exported {len(jobs)} jobs to {path}")
         if len(jobs) < count:
             click.echo(
-                f"Note: only {len(jobs)} jobs were available from the current fetched page/search result.",
+                f"Note: only {len(jobs)} jobs were available after paging through SEEK search results.",
                 err=True,
             )
     except Exception as err:

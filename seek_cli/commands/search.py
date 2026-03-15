@@ -31,11 +31,14 @@ def search(keyword: str, location: str, page: int, as_json: bool) -> None:
         table.add_column("Company", style="green")
         table.add_column("Location")
         table.add_column("Salary", style="yellow")
+        table.add_column("Listed", style="magenta", width=8)
 
         for i, job in enumerate(result.jobs, start=1):
-            table.add_row(str(i), job.title, job.company, job.location, job.salary)
+            table.add_row(str(i), job.title, job.company, job.location, job.salary, job.listed_at or "-")
 
         console.print(table)
+        if result.total is not None:
+            console.print(f"[dim]Approx total results: {result.total} · page {result.page}[/dim]")
         console.print("[dim]Use `seek show <index>` to view cached detail lookup targets.[/dim]")
     except Exception as err:
         fail(err)

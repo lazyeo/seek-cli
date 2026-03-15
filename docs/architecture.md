@@ -42,11 +42,22 @@
 1. User runs command
 2. Click parses options
 3. Command calls `SeekClient`
-4. Client returns normalized data
-5. Command either:
+4. Client fetches one or more SEEK pages over the session-reuse transport
+5. Client extracts `SEEK_APOLLO_DATA` (and when available `SEEK_REDUX_DATA`)
+6. Parser normalizes the payload into local models
+7. Command either:
    - renders Rich output to terminal, or
    - emits `{ok, schema_version, data}` JSON envelope
-6. Search results are cached for follow-up `show`
+8. Search results are cached for follow-up `show`
+
+## Multi-page collection
+
+`export` now collects jobs across multiple search pages until:
+- the requested `--count` is satisfied,
+- SEEK reports there are no more results, or
+- repeated/empty pages suggest collection is exhausted.
+
+Deduplication is done on `job_id`, because SEEK can emit the same listing multiple times with different tracking tokens.
 
 ## Documentation policy
 

@@ -5,7 +5,7 @@ from urllib.parse import quote_plus
 
 from .constants import USER_AGENT
 from .exceptions import TransportError
-from .models import JobDetail, SearchResult
+from .models import JobDetail, JobSummary, SearchResult
 from .parsers import parse_detail_apollo, parse_search_apollo
 from .session import load_seek_cookies
 
@@ -67,28 +67,73 @@ class SeekClient:
             )
         return text
 
-    def _extract_apollo_data(self, html: str) -> dict:
-        marker = "window.SEEK_APOLLO_DATA = "
+    def _extract_window_json(self, html: str, marker: str) -> dict:
         idx = html.find(marker)
         if idx == -1:
-            raise TransportError("Could not find SEEK_APOLLO_DATA in HTML response.")
+            raise TransportError(f"Could not find {marker.strip()} in HTML response.")
         payload = html[idx + len(marker):]
         try:
             obj, _ = json.JSONDecoder().raw_decode(payload)
         except Exception as err:
-            raise TransportError("Failed to decode SEEK_APOLLO_DATA JSON payload.") from err
+            raise TransportError(f"Failed to decode JSON payload for {marker.strip()}.") from err
         return obj
 
-    def search_jobs(self, keyword: str, location: str = "", page: int = 1) -> SearchResult:
+    def _extract_apollo_data(self, html: str) -> dict:
+        return self._extract_window_json(html, "window.SEEK_APOLLO_DATA = ")
+
+    def _extract_redux_data(self, html: str) -> dict:
+        return self._extract_window_json(html, "window.SEEK_REDUX_DATA = ")
+
+    def _build_search_url(self, keyword: str, location: str = "", page: int = 1) -> str:
         query = quote_plus(keyword.strip())
         url = f"https://www.seek.co.nz/jobs?keywords={query}"
         if location.strip():
             url += f"&where={quote_plus(location.strip())}"
         if page > 1:
             url += f"&page={page}"
-        html = self._get_html(url)
+        return url
+
+    def search_jobs(self, keyword: str, location: str = "", page: int = 1) -> SearchResult:
+        html = self._get_html(self._build_search_url(keyword=keyword, location=location, page=page))
         apollo = self._extract_apollo_data(html)
-        return parse_search_apollo(apollo, keyword=keyword, location=location, page=page)
+        total = None
+        try:
+            redux = self._extract_redux_data(html)
+            total = redux.get("jobsCount") if isinstance(redux.get("jobsCount"), int) else None
+        except TransportError:
+            total = None
+        return parse_search_apollo(apollo, keyword=keyword, location=location, page=page, total=total)
+
+    def collect_jobs(self, keyword: str, location: str = "", start_page: int = 1, count: int = 20) -> list[JobSummary]:
+        jobs: list[JobSummary] = []
+        seen: set[str] = set()
+        page = start_page
+        empty_pages = 0
+
+        while len(jobs) < count and empty_pages < 2:
+            result = self.search_jobs(keyword=keyword, location=location, page=page)
+            before = len(jobs)
+            for job in result.jobs:
+                if job.job_id in seen:
+                    continue
+                seen.add(job.job_id)
+                jobs.append(job)
+                if len(jobs) >= count:
+                    break
+
+            if len(jobs) == before:
+                empty_pages += 1
+            else:
+                empty_pages = 0
+
+            if result.has_more is False:
+                break
+            if not result.jobs:
+                break
+
+            page += 1
+
+        return jobs[:count]
 
     def get_job_detail(self, job_id: str) -> JobDetail:
         url = f"https://www.seek.co.nz/job/{job_id}"

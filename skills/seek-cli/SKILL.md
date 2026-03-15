@@ -1,6 +1,6 @@
 ---
 name: seek-cli
-description: Read-only SEEK New Zealand job search and job-description extraction via the local `seek` CLI. Use when you need to search SEEK jobs, fetch a SEEK job description from a job id or SEEK NZ job URL, inspect a cached search result with `seek show`, or export SEEK search results to JSON/CSV. Prefer this skill over browser automation when the task is specifically about SEEK NZ listings and JD extraction.
+description: Read-only SEEK New Zealand job search and job-description extraction via the local `seek` CLI. Use when you need to search SEEK jobs, fetch a SEEK job description from a job id or SEEK NZ job URL, inspect a cached search result with `seek show`, or export SEEK search results to JSON/CSV across multiple pages. Prefer this skill over browser automation when the task is specifically about SEEK NZ listings and JD extraction.
 ---
 
 # seek-cli Skill
@@ -42,9 +42,11 @@ uv run python -m seek_cli.cli show 1 --json
 ### Export results
 
 ```bash
-uv run python -m seek_cli.cli export "python" --format json -o jobs.json
-uv run python -m seek_cli.cli export "python" --format csv -o jobs.csv
+uv run python -m seek_cli.cli export "python" --count 60 --format json -o jobs.json
+uv run python -m seek_cli.cli export "python" --count 60 --format csv -o jobs.csv
 ```
+
+`export` can page through multiple search result pages to satisfy larger `--count` values.
 
 ## Output expectations
 
