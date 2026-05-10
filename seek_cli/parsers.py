@@ -125,7 +125,13 @@ def parse_detail_apollo(apollo_data: dict[str, Any], job_id: str) -> JobDetail:
         if key_name.startswith("workArrangements(") and isinstance(value, dict):
             work_arrangements = value
             break
-    description = _html_to_text(job.get('content({"platform":"WEB"})') or "")
+    description_html = _first_non_empty(
+        job.get('content({"platform":"WEB"})'),
+        job.get('content2({"zone":"anz-2"})'),
+        job.get("content"),
+        job.get("content2"),
+    )
+    description = _html_to_text(description_html)
     company = advertiser.get('name({"locale":"en-NZ"})') or ""
     listed_at = _first_non_empty(
         listed_at_obj.get('label({"context":"JOB_POSTED","length":"SHORT","locale":"en-NZ","timezone":"Pacific/Auckland"})'),
